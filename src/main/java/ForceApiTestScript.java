@@ -6,15 +6,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
-public class TestScript {
-
-
-    public static void main(String[] args) throws IOException {
-
-        // Create a neat value object to hold the URL
+public class ForceApiTestScript {
+    public static void main(String[] args) {
         HttpURLConnection conn = null;
 
         // Now it's "open", we can set the request method, headers etc.
@@ -30,12 +25,10 @@ public class TestScript {
                 Iterator<Cell> cellIterator = row.cellIterator();
                 //iterate columns
                 while (cellIterator.hasNext())
-                {
-                    conn=getHttpURLConnection();
-                    Cell cell = cellIterator.next();
+                { Cell cell = cellIterator.next();
                     String offerId=cell.getStringCellValue();
+                    conn=getHttpConnection("http://gatekeeper-sync.prod.gatekeeper.catdev.prod.walmart.com/gatekeeper-sync/services/biz/publish/offer/force/"+offerId,"DELETE");
                     try( DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
-                        wr.write( offerId.getBytes(StandardCharsets.UTF_8) );
                     }
                     String line;
                     try(BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
@@ -53,17 +46,22 @@ public class TestScript {
         }
     }
 
-    public static HttpURLConnection getHttpURLConnection() throws IOException {
-        URL url = new URL("http://gatekeeper-sync.prod.gatekeeper.catdev.prod.walmart.com/gatekeeper-sync/services/biz/publish/execute/offer");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setDoOutput(true);
-        conn.setInstanceFollowRedirects(false);
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        conn.setRequestProperty("charset", "utf-8");
-        conn.setUseCaches(false);
-        return conn;
+    public static HttpURLConnection getHttpConnection(String url, String type){
+        URL uri = null;
+        HttpURLConnection con = null;
+        try{
+            uri = new URL(url);
+            con = (HttpURLConnection) uri.openConnection();
+            con.setRequestMethod(type); //type: POST, PUT, DELETE, GET
+            con.setDoOutput(true);
+            con.setDoInput(true);
+            con.setConnectTimeout(60000); //60 secs
+            con.setReadTimeout(60000); //60 secs
+            con.setRequestProperty("Accept-Encoding", "Your Encoding");
+            con.setRequestProperty("Content-Type", "Your Encoding");
+        }catch(Exception e){
+            System.out.println( "connection i/o failed" );
+        }
+        return con;
     }
-
 }
-
